@@ -5,6 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Админ-панель — Управление проектами</title>
   <link rel="stylesheet" href="style.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+  <noscript><script src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.js"></script></noscript>
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
+    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
+
+    // Firebase configuration - REPLACE WITH YOUR OWN CONFIG
+    const firebaseConfig = {
+    apiKey: "AIzaSyA_vZeo80PdtrsvoCWTxUmfBKouqof_uf8",
+    authDomain: "portfolio-shed.firebaseapp.com",
+    projectId: "portfolio-shed",
+    storageBucket: "portfolio-shed.firebasestorage.app",
+    messagingSenderId: "737088614717",
+    appId: "1:737088614717:web:ad28c493139fe6c51dd554",
+    measurementId: "G-X0SKNWS4F5"
+  };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Make db available globally
+    window.db = db;
+    window.collection = collection;
+    window.getDocs = getDocs;
+    window.addDoc = addDoc;
+    window.updateDoc = updateDoc;
+    window.deleteDoc = deleteDoc;
+    window.doc = doc;
+  </script>
   <style>
     /* ── Admin specific styles ── */
     .admin-container {
@@ -232,6 +263,7 @@
       line-height: 1.5;
       display: -webkit-box;
       -webkit-line-clamp: 2;
+      line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
@@ -539,7 +571,7 @@
       <div class="form-section">
         <h2 id="formTitle">➕ Добавить новый проект</h2>
         <div id="statusMessage"></div>
-        <form id="projectForm" onsubmit="handleFormSubmit(event)">
+        <form id="projectForm" onsubmit="handleFormSubmit(event); return false;">
           <div class="form-grid">
             <div class="form-group">
               <label for="projectName">Название проекта *</label>
@@ -592,7 +624,7 @@
           </div>
 
           <div class="form-actions">
-            <button type="submit" class="btn-submit" id="submitBtn">Добавить проект</button>
+            <button type="button" class="btn-submit" id="submitBtn" onclick="handleFormSubmit(event)">Добавить проект</button>
             <button type="reset" class="btn-reset" onclick="resetForm()">Очистить</button>
           </div>
         </form>
@@ -635,10 +667,100 @@
   let projects = [];
   let currentEditId = null;
   let deleteTargetId = null;
+  let isFirebaseReady = false;
+
+  // ── Firebase helpers ──
+  async function waitForFirebase() {
+    return new Promise((resolve) => {
+      if (window.db) {
+        isFirebaseReady = true;
+        resolve();
+      } else {
+        const checkFirebase = setInterval(() => {
+          if (window.db) {
+            isFirebaseReady = true;
+            clearInterval(checkFirebase);
+            resolve();
+          }
+        }, 100);
+      }
+    });
+  }
+
+  async function getProjects() {
+    if (!isFirebaseReady) await waitForFirebase();
+
+    try {
+      if (!window.db) {
+        console.warn('Firebase not available, using localStorage fallback');
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      }
+
+      const querySnapshot = await window.getDocs(window.collection(window.db, 'projects'));
+      const projectsData = [];
+      querySnapshot.forEach((doc) => {
+        projectsData.push({ id: doc.id, ...doc.data() });
+      });
+
+      // Sort by creation date (newest first)
+      projectsData.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      return projectsData;
+    } catch (error) {
+      console.error('Error getting projects:', error);
+      // Fallback to localStorage
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    }
+  }
+
+  async function saveProjectToFirebase(project) {
+    if (!isFirebaseReady) await waitForFirebase();
+
+    try {
+      if (!window.db) return false;
+
+      const docRef = await window.addDoc(window.collection(window.db, 'projects'), {
+        ...project,
+        createdAt: new Date().toISOString()
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error('Error saving project:', error);
+      return false;
+    }
+  }
+
+  async function updateProjectInFirebase(id, project) {
+    if (!isFirebaseReady) await waitForFirebase();
+
+    try {
+      if (!window.db) return false;
+
+      const docRef = window.doc(window.db, 'projects', id);
+      await window.updateDoc(docRef, project);
+      return true;
+    } catch (error) {
+      console.error('Error updating project:', error);
+      return false;
+    }
+  }
+
+  async function deleteProjectFromFirebase(id) {
+    if (!isFirebaseReady) await waitForFirebase();
+
+    try {
+      if (!window.db) return false;
+
+      await window.deleteDoc(window.doc(window.db, 'projects', id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      return false;
+    }
+  }
 
   // ── Init ──
-  window.addEventListener('load', () => {
-    projects = getProjects();
+  window.addEventListener('load', async () => {
+    projects = await getProjects();
     checkAuth();
   });
 
@@ -682,19 +804,6 @@
     }
   }
 
-  // ── Storage Functions ──
-  function getProjects() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    } catch {
-      return [];
-    }
-  }
-
-  function saveProjects() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
-  }
-
   function showStatus(message, type = 'success') {
     const statusEl = document.getElementById('statusMessage');
     statusEl.className = 'status-message';
@@ -707,11 +816,10 @@
   }
 
   // ── Form Functions ──
-  function handleFormSubmit(event) {
+  async function handleFormSubmit(event) {
     event.preventDefault();
 
     const formData = {
-      id: currentEditId || Date.now().toString(),
       name: document.getElementById('projectName').value.trim(),
       desc: document.getElementById('projectDesc').value.trim(),
       fullDesc: document.getElementById('projectFullDesc').value.trim(),
@@ -723,20 +831,68 @@
       tags: document.getElementById('projectTags').value.trim().split(',').map(t => t.trim()).filter(t => t)
     };
 
-    if (currentEditId) {
-      const index = projects.findIndex(p => p.id === currentEditId);
-      if (index !== -1) {
-        projects[index] = formData;
-        showStatus('✓ Проект обновлён', 'success');
-      }
-    } else {
-      projects.push(formData);
-      showStatus('✓ Проект добавлен', 'success');
+    // Validate required fields
+    if (!formData.name || !formData.desc) {
+      showStatus('❌ Заполните обязательные поля (название и описание)', 'error');
+      return;
     }
 
-    saveProjects();
-    resetForm();
-    renderProjects();
+    try {
+      let success = false;
+
+      if (currentEditId) {
+        // Update existing project
+        if (window.db) {
+          success = await updateProjectInFirebase(currentEditId, formData);
+        } else {
+          // Update in localStorage
+          const allProjects = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+          const index = allProjects.findIndex(p => p.id === currentEditId);
+          if (index !== -1) {
+            allProjects[index] = { ...allProjects[index], ...formData };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(allProjects));
+            success = true;
+          }
+        }
+
+        if (success) {
+          showStatus('✓ Проект обновлён', 'success');
+        } else {
+          showStatus('❌ Ошибка обновления проекта', 'error');
+          return;
+        }
+      } else {
+        // Add new project
+        if (window.db) {
+          const newId = await saveProjectToFirebase(formData);
+          success = !!newId;
+        } else {
+          // Save to localStorage
+          const allProjects = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+          const newProject = {
+            ...formData,
+            id: Date.now().toString(),
+            createdAt: new Date().toISOString()
+          };
+          allProjects.push(newProject);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(allProjects));
+          success = true;
+        }
+
+        if (success) {
+          showStatus('✓ Проект добавлен', 'success');
+        } else {
+          showStatus('❌ Ошибка добавления проекта', 'error');
+          return;
+        }
+      }
+
+      resetForm();
+      await renderProjects();
+    } catch (error) {
+      console.error('Error saving project:', error);
+      showStatus('❌ Ошибка сохранения проекта', 'error');
+    }
   }
 
   function resetForm() {
@@ -747,73 +903,99 @@
   }
 
   // ── Render Functions ──
-  function renderProjects() {
+  async function renderProjects() {
     const container = document.getElementById('projectsList');
     const count = document.getElementById('projectCount');
-    count.textContent = projects.length;
 
-    if (projects.length === 0) {
+    try {
+      const currentProjects = await getProjects();
+      projects = currentProjects; // Update global projects array
+      count.textContent = projects.length;
+
+      if (projects.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📭</div>
+            <div class="empty-state-text">Проектов пока нет. Добавьте первый проект!</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = projects.map(project => `
+        <div class="project-card">
+          <div class="project-card-header">
+            <h3>${escapeHtml(project.name)}</h3>
+          </div>
+          <div class="project-card-badges">
+            <span class="project-badge">${project.status}</span>
+            ${project.tags && project.tags.length > 0 ?
+              project.tags.slice(0, 2).map(tag => `<span class="project-badge">${escapeHtml(tag)}</span>`).join('')
+              : ''}
+          </div>
+          <div class="project-card-meta">
+            ${project.price ? `<span>💰 ${escapeHtml(project.price)}</span>` : ''}
+            ${project.time ? `<span>⏱ ${escapeHtml(project.time)}</span>` : ''}
+          </div>
+          <div class="project-card-desc">${escapeHtml(project.desc)}</div>
+          <div class="project-card-actions">
+            <button class="btn-edit" onclick="editProject('${project.id}')">Редактировать</button>
+            <button class="btn-delete" onclick="deleteProject('${project.id}')">Удалить</button>
+          </div>
+        </div>
+      `).join('');
+    } catch (error) {
+      console.error('Error rendering projects:', error);
       container.innerHTML = `
         <div class="empty-state">
-          <div class="empty-state-icon">📭</div>
-          <div class="empty-state-text">Проектов пока нет. Добавьте первый проект!</div>
+          <div class="empty-state-icon">⚠️</div>
+          <div class="empty-state-text">Ошибка загрузки проектов</div>
         </div>
       `;
-      return;
+      count.textContent = '0';
     }
-
-    container.innerHTML = projects.map(project => `
-      <div class="project-card">
-        <div class="project-card-header">
-          <h3>${escapeHtml(project.name)}</h3>
-        </div>
-        <div class="project-card-badges">
-          <span class="project-badge">${project.status}</span>
-          ${project.tags && project.tags.length > 0 ? 
-            project.tags.slice(0, 2).map(tag => `<span class="project-badge">${escapeHtml(tag)}</span>`).join('') 
-            : ''}
-        </div>
-        <div class="project-card-meta">
-          ${project.price ? `<span>💰 ${escapeHtml(project.price)}</span>` : ''}
-          ${project.time ? `<span>⏱ ${escapeHtml(project.time)}</span>` : ''}
-        </div>
-        <div class="project-card-desc">${escapeHtml(project.desc)}</div>
-        <div class="project-card-actions">
-          <button class="btn-edit" onclick="editProject('${project.id}')">Редактировать</button>
-          <button class="btn-delete" onclick="deleteProject('${project.id}')">Удалить</button>
-        </div>
-      </div>
-    `).join('');
   }
 
-  function editProject(id) {
-    const project = projects.find(p => p.id === id);
-    if (!project) return;
+  async function editProject(id) {
+    try {
+      const allProjects = await getProjects();
+      const project = allProjects.find(p => p.id === id);
+      if (!project) return;
 
-    currentEditId = id;
-    document.getElementById('projectName').value = project.name;
-    document.getElementById('projectDesc').value = project.desc;
-    document.getElementById('projectFullDesc').value = project.fullDesc || '';
-    document.getElementById('projectPrice').value = project.price || '';
-    document.getElementById('projectTime').value = project.time || '';
-    document.getElementById('projectStatus').value = project.status || 'Завершён';
-    document.getElementById('projectImage').value = project.image || '';
-    document.getElementById('projectUrl').value = project.url || '';
-    document.getElementById('projectTags').value = project.tags ? project.tags.join(', ') : '';
+      currentEditId = id;
+      document.getElementById('projectName').value = project.name;
+      document.getElementById('projectDesc').value = project.desc;
+      document.getElementById('projectFullDesc').value = project.fullDesc || '';
+      document.getElementById('projectPrice').value = project.price || '';
+      document.getElementById('projectTime').value = project.time || '';
+      document.getElementById('projectStatus').value = project.status || 'Завершён';
+      document.getElementById('projectImage').value = project.image || '';
+      document.getElementById('projectUrl').value = project.url || '';
+      document.getElementById('projectTags').value = project.tags ? project.tags.join(', ') : '';
 
-    document.getElementById('formTitle').textContent = '✏️ Редактировать проект';
-    document.getElementById('submitBtn').textContent = 'Сохранить изменения';
+      document.getElementById('formTitle').textContent = '✏️ Редактировать проект';
+      document.getElementById('submitBtn').textContent = 'Сохранить изменения';
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error) {
+      console.error('Error editing project:', error);
+      showStatus('❌ Ошибка загрузки проекта', 'error');
+    }
   }
 
-  function deleteProject(id) {
-    const project = projects.find(p => p.id === id);
-    if (!project) return;
+  async function deleteProject(id) {
+    try {
+      const allProjects = await getProjects();
+      const project = allProjects.find(p => p.id === id);
+      if (!project) return;
 
-    deleteTargetId = id;
-    document.getElementById('deleteConfirmText').textContent = `Вы точно хотите удалить проект "${project.name}"? Это действие невозможно отменить.`;
-    document.getElementById('deleteModal').classList.add('active');
+      deleteTargetId = id;
+      document.getElementById('deleteConfirmText').textContent = `Вы точно хотите удалить проект "${project.name}"? Это действие невозможно отменить.`;
+      document.getElementById('deleteModal').classList.add('active');
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      showStatus('❌ Ошибка удаления проекта', 'error');
+    }
   }
 
   function closeDeleteModal() {
@@ -821,13 +1003,21 @@
     deleteTargetId = null;
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (deleteTargetId) {
-      projects = projects.filter(p => p.id !== deleteTargetId);
-      saveProjects();
-      showStatus('✓ Проект удалён', 'success');
-      renderProjects();
-      closeDeleteModal();
+      try {
+        const success = await deleteProjectFromFirebase(deleteTargetId);
+        if (success) {
+          showStatus('✓ Проект удалён', 'success');
+          await renderProjects();
+          closeDeleteModal();
+        } else {
+          showStatus('❌ Ошибка удаления проекта', 'error');
+        }
+      } catch (error) {
+        console.error('Error confirming delete:', error);
+        showStatus('❌ Ошибка удаления проекта', 'error');
+      }
     }
   }
 
