@@ -8,6 +8,35 @@
   <link rel="stylesheet" href="style.css">
   <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
   <noscript><script src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.js"></script></noscript>
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
+    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
+
+    // Firebase configuration - REPLACE WITH YOUR OWN CONFIG
+    const firebaseConfig = {
+    apiKey: "AIzaSyA_vZeo80PdtrsvoCWTxUmfBKouqof_uf8",
+    authDomain: "portfolio-shed.firebaseapp.com",
+    projectId: "portfolio-shed",
+    storageBucket: "portfolio-shed.firebasestorage.app",
+    messagingSenderId: "737088614717",
+    appId: "1:737088614717:web:ad28c493139fe6c51dd554",
+    measurementId: "G-X0SKNWS4F5"
+  };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Make db available globally
+    window.db = db;
+    window.collection = collection;
+    window.getDocs = getDocs;
+    window.addDoc = addDoc;
+    window.updateDoc = updateDoc;
+    window.deleteDoc = deleteDoc;
+    window.doc = doc;
+  </script>
 </head>
 <body>
 
@@ -184,13 +213,20 @@
 <script src="app.js"></script>
 <script>
   // Update projects count in hero stats
-  function updateStats() {
-    const projects = JSON.parse(localStorage.getItem('shed_projects') || '[]');
-    const el = document.getElementById('projectsCount');
-    if (el) el.textContent = projects.length;
+  async function updateStats() {
+    try {
+      const projects = await getProjects();
+      const el = document.getElementById('projectsCount');
+      if (el) el.textContent = projects.length;
+    } catch (error) {
+      console.error('Error updating stats:', error);
+      // Fallback to localStorage
+      const projects = JSON.parse(localStorage.getItem('shed_projects') || '[]');
+      const el = document.getElementById('projectsCount');
+      if (el) el.textContent = projects.length;
+    }
   }
   updateStats();
-  window.addEventListener('storage', updateStats);
 </script>
 </body>
 </html>
