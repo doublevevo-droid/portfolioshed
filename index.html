@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Евгений Шед — Разработчик</title>
+  <meta name="description" content="Портфолио Евгения Шеда — веб-разработчика и программиста. Современные проекты, чистый код, отличный дизайн.">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.esm.js"></script>
+  <noscript><script src="https://cdn.jsdelivr.net/npm/ionicons/dist/ionicons/ionicons.js"></script></noscript>
+</head>
+<body>
+
+<!-- ── Navigation ── -->
+<nav class="nav">
+  <a href="#" class="nav-logo">
+    <span class="nav-logo-dot"></span>
+    Евгений Шед
+  </a>
+  <ul class="nav-links">
+    <li><a href="#about">Обо мне</a></li>
+    <li><a href="#projects">Проекты</a></li>
+    <li><a href="#contact">Контакт</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="theme-toggle" id="themeToggle" aria-label="Сменить тему">🌙</button>
+    <button class="nav-hamburger" id="hamburger" aria-label="Меню">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile menu -->
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#about">Обо мне</a>
+  <a href="#projects">Проекты</a>
+  <a href="#contact">Контакт</a>
+</div>
+
+<!-- ── Hero ── -->
+<section class="hero">
+  <div class="hero-bg">
+    <div class="hero-blob"></div>
+    <div class="hero-blob"></div>
+    <div class="hero-blob"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-badge">✦ Доступен для новых проектов</div>
+    <h1 class="hero-title">
+      Код, который<br><span>работает</span>
+    </h1>
+    <p class="hero-subtitle">
+      Привет, я Евгений Шед — разработчик с опытом создания современных веб-приложений. Пишу чистый код, думаю о пользователях.
+    </p>
+    <div class="hero-actions">
+      <a href="#projects" class="btn btn-primary">Смотреть проекты →</a>
+      <a href="#contact" class="btn btn-secondary">Написать мне</a>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-value" id="projectsCount">0</span>
+        <span class="stat-label">Проектов</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">4+</span>
+        <span class="stat-label">Лет опыта</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">100%</span>
+        <span class="stat-label">Довольных клиентов</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── About ── -->
+<section class="about" id="about">
+  <div class="container">
+    <div class="about-grid">
+      <div class="about-avatar-wrap reveal">
+        <img class="about-avatar" src="https://i.ibb.co/s9gB5Wtc/vk-W-PSH-9sa99-G3e-Zh-Xu-P7gar31-Ie-UDz-Updmwg6s-E640-G3-Nln6-Hy-J4-IAvbo-89v-Pdj2-U0-Frt-V3-OCjou-TRjszaa.jpg" alt="Евгений Шед">
+      </div>
+      <div class="about-text reveal reveal-delay-1">
+        <h2>Немного обо&nbsp;мне</h2>
+        <p>
+          Я — fullstack-разработчик, специализирующийся на создании современных веб-приложений. Люблю чистую архитектуру, продуманный UX и код, которым не стыдно поделиться.
+        </p>
+        <p>
+          Работаю с бизнесами от стартапов до компаний. Предлагаю полный цикл: от идеи до готового продукта с поддержкой.
+        </p>
+        <div class="skills-list">
+          <span class="skill-tag">JavaScript</span>
+          <span class="skill-tag">TypeScript</span>
+          <span class="skill-tag">React</span>
+          <span class="skill-tag">Node.js</span>
+          <span class="skill-tag">Python</span>
+          <span class="skill-tag">PostgreSQL</span>
+          <span class="skill-tag">Docker</span>
+          <span class="skill-tag">Git</span>
+          <span class="skill-tag">REST API</span>
+          <span class="skill-tag">UI/UX</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Projects ── -->
+<section class="projects" id="projects">
+  <div class="container">
+    <div class="section-header reveal">
+      <p class="section-eyebrow">Портфолио</p>
+      <h2 class="section-title">Мои проекты</h2>
+      <p class="section-desc">Каждый проект — это решение реальной задачи. Нажмите на карточку, чтобы узнать подробности.</p>
+    </div>
+    <div class="projects-grid" id="projectsGrid">
+      <!-- Карточки рендерятся через JS -->
+    </div>
+  </div>
+</section>
+
+<!-- ── Contact ── -->
+<section class="contact" id="contact">
+  <div class="container">
+    <div class="contact-grid">
+      <div class="contact-info reveal">
+        <h2>Начнём работать вместе?</h2>
+        <p>Свяжитесь со мной в Telegram или VK. Отвечаю в течение дня.</p>
+        <div class="social-links">
+          <a href="https://t.me/shedevralme" target="_blank" class="social-link telegram" aria-label="Telegram">
+            <ion-icon name="paper-plane-outline"></ion-icon>
+          </a>
+          <a href="https://vk.com/shedevral" target="_blank" class="social-link vk" aria-label="VK">
+            <ion-icon name="logo-vk"></ion-icon>
+          </a>
+        </div>
+      </div>
+      <div class="reveal reveal-delay-1"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="footer-inner">
+    <p class="footer-copy">© 2026 Евгений Шед. Все права защищены.</p>
+    <div class="footer-links">
+      <a href="#about">Обо мне</a>
+      <a href="#projects">Проекты</a>
+      <a href="#contact">Контакт</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ── Modal ── -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-backdrop"></div>
+  <div class="modal">
+    <div class="modal-img" id="modalImg">
+      <div class="modal-img-placeholder">🖥️</div>
+    </div>
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="modal-body">
+      <h2 class="modal-title" id="modalTitle"></h2>
+      <p class="modal-desc" id="modalDesc"></p>
+      <div class="modal-info">
+        <div class="modal-info-item">
+          <div class="modal-info-label">Стоимость</div>
+          <div class="modal-info-value" id="modalPrice"></div>
+        </div>
+        <div class="modal-info-item">
+          <div class="modal-info-label">Срок изготовления</div>
+          <div class="modal-info-value" id="modalTime"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="modalGoBtn" class="btn btn-primary">Перейти →</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('modalOverlay').classList.remove('active');document.body.style.overflow=''">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  // Update projects count in hero stats
+  function updateStats() {
+    const projects = JSON.parse(localStorage.getItem('shed_projects') || '[]');
+    const el = document.getElementById('projectsCount');
+    if (el) el.textContent = projects.length;
+  }
+  updateStats();
+  window.addEventListener('storage', updateStats);
+</script>
+</body>
+</html>
